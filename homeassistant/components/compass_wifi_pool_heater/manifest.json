@@ -1,0 +1,14 @@
+{
+  "domain": "compass_wifi_pool_heater",
+  "name": "Compass WiFi Pool Heater",
+  "codeowners": ["@siobhanbaynes"],
+  "config_flow": true,
+  "dependencies": [],
+  "documentation": "https://www.home-assistant.io/integrations/compass_wifi_pool_heater",
+  "homekit": {},
+  "integration_type": "hub",
+  "iot_class": "cloud_polling",
+  "requirements": [],
+  "ssdp": [],
+  "zeroconf": []
+}

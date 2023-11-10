@@ -23,6 +23,8 @@ fi
 
 script/bootstrap
 
+git config --global --add safe.directory /workspaces/core
+
 pre-commit install
 python3 -m pip install -e . --config-settings editable_mode=compat --constraint homeassistant/package_constraints.txt
 python3 -m script.translations develop --all

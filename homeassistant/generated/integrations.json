@@ -907,6 +907,12 @@
       "config_flow": false,
       "iot_class": "local_polling"
     },
+    "compass_wifi_pool_heater": {
+      "name": "Compass WiFi Pool Heater",
+      "integration_type": "hub",
+      "config_flow": true,
+      "iot_class": "cloud_polling"
+    },
     "compensation": {
       "name": "Compensation",
       "integration_type": "hub",
@@ -5744,6 +5750,12 @@
           "name": "Tesla Wall Connector"
         }
       }
+    },
+    "test": {
+      "name": "test",
+      "integration_type": "hub",
+      "config_flow": true,
+      "iot_class": "cloud_polling"
     },
     "tfiac": {
       "name": "Tfiac",
