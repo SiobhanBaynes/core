@@ -1,12 +1,11 @@
 """Config flow for Compass WiFi Pool Heater integration."""
 from __future__ import annotations
 
+import json
 import logging
 from typing import Any
-
-import voluptuous as vol
 import aiohttp
-import json
+import voluptuous as vol
 
 from homeassistant import config_entries
 from homeassistant.core import HomeAssistant
@@ -14,9 +13,9 @@ from homeassistant.data_entry_flow import FlowResult
 from homeassistant.exceptions import HomeAssistantError
 
 from .const import DOMAIN
+from .client import CompassWifiPoolHeaterClient
 
 _LOGGER = logging.getLogger(__name__)
-url = "https://www.captouchwifi.com/icm/api/call"
 
 STEP_USER_DATA_SCHEMA = vol.Schema(
     {
@@ -24,7 +23,6 @@ STEP_USER_DATA_SCHEMA = vol.Schema(
         vol.Required("password"): str,
     }
 )
-
 
 class PlaceholderHub:
     """Placeholder class to make tests pass.
@@ -41,52 +39,16 @@ class PlaceholderHub:
         return True
 
 
-async def post_request(url, payload, headers):
-    async with aiohttp.ClientSession() as session:
-        async with session.post(url, headers=headers, data=payload) as response:
-            if response.status != 200:
-                raise CannotConnect
-            if response_json["result"] == "failed":
-                raise Exception(f"Request failed: {response_json['message']}")
-            response_json = await response.json()
-            return response_json
-
-async def get_token(username, password):
-    payload = json.dumps({
-    "action": "login",
-    "username": username,
-    "password": password
-    })
-    headers = {
-    'Content-Type': 'application/json',
-    }
-
-    response = await post_request(url, payload, headers)
-    return response['token']
-
-async def get_devices(token):
-    payload = json.dumps({
-    "action": "getPasDevices",
-    "token": token
-    })
-    headers = {
-    'Content-Type': 'application/json',
-    }
-
-    response =  await post_request(url, payload, headers)
-    return response["devices"]
-
-async def validate_input(hass: HomeAssistant, data: dict[str, Any]) -> dict[str, Any]:
+async def validate_input(hass: HomeAssistant, data: dict[str, Any]) -> list[dict[str, Any]]:
     try:
-        token = await get_token(data["username"], data["password"])
-    except Exception as e:
+        client = CompassWifiPoolHeaterClient()
+        await client.connect(**data)
+    except Exception:
         raise InvalidAuth
 
-    devices = await get_devices(token)
+    devices = await client.get_device_details()
 
-    # Return info that you want to store in the config entry.
-    #return {"title": "Name of the device"}
-    return devices[0]
+    return {"title": devices[0].name, "description": devices[0].description, "uniqueid": devices[0].unique_key,  "username": data["username"], "password": data["password"]}
 
 class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     """Handle a config flow for Compass WiFi Pool Heater."""
@@ -109,6 +71,8 @@ class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 _LOGGER.exception("Unexpected exception")
                 errors["base"] = "unknown"
             else:
+                await self.async_set_unique_id(info["uniqueid"])
+                self._abort_if_unique_id_configured()
                 return self.async_create_entry(title=info["title"], data=user_input)
 
         return self.async_show_form(
