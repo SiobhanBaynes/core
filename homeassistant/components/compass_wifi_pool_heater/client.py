@@ -1,10 +1,11 @@
 """File for Compass Wifi client models."""
 import json
+
 import aiohttp
 
+from .const import COMPASS_URL
 from .types import Device, DeviceDetail
 
-from .const import COMPASS_URL
 
 class CompassWifiPoolHeaterClient:
     """Class for the Compass Wifi Pool Heater client. Use from_input to initialize."""
@@ -14,7 +15,9 @@ class CompassWifiPoolHeaterClient:
 
     async def post_request(self, payload, headers):
         async with aiohttp.ClientSession() as session:
-            async with session.post(COMPASS_URL, headers=headers, data=payload) as response:
+            async with session.post(
+                COMPASS_URL, headers=headers, data=payload
+            ) as response:
                 if response.status != 200:
                     raise CannotConnect
                 response_json = await response.json()
@@ -23,25 +26,24 @@ class CompassWifiPoolHeaterClient:
                 return response_json
 
     async def connect(self, **kwargs):
-        payload = json.dumps({
-        "action": "login",
-        "username": kwargs["username"],
-        "password": kwargs["password"]
-        })
+        payload = json.dumps(
+            {
+                "action": "login",
+                "username": kwargs["username"],
+                "password": kwargs["password"],
+            }
+        )
         headers = {
-        'Content-Type': 'application/json',
+            "Content-Type": "application/json",
         }
 
-        response =  await self.post_request(payload, headers)
-        self.token = response['token']
+        response = await self.post_request(payload, headers)
+        self.token = response["token"]
 
     async def get_devices(self) -> list[Device]:
-        payload = json.dumps({
-        "action": "getPasDevices",
-        "token": self.token
-        })
+        payload = json.dumps({"action": "getPasDevices", "token": self.token})
         headers = {
-        'Content-Type': 'application/json',
+            "Content-Type": "application/json",
         }
 
         json_data_string = await self.post_request(payload, headers)
@@ -63,16 +65,12 @@ class CompassWifiPoolHeaterClient:
         return list_of_device_details
 
     async def get_device_detail(self, key):
-        payload = json.dumps({
-        "action": "thermostatGetDetail",
-        "thermostatKey": key,
-        "token": self.token
-        })
+        payload = json.dumps(
+            {"action": "thermostatGetDetail", "thermostatKey": key, "token": self.token}
+        )
         headers = {
-        'Content-Type': 'application/json',
+            "Content-Type": "application/json",
         }
 
-        response =  await self.post_request(payload, headers)
+        response = await self.post_request(payload, headers)
         return response["detail"]
-
-

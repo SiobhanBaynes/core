@@ -1,9 +1,11 @@
 """File for Compass Wifi client models."""
 from dataclasses import dataclass
 
+
 @dataclass
 class Device:
     """Class for a device."""
+
     id: str
     unique_key: str
     name: str
@@ -14,6 +16,7 @@ class Device:
     owner: str
     online: str
     groups: list[str]
+
 
 class DeviceState:
     CF: int
@@ -240,6 +243,7 @@ class DeviceState:
     MAC11: int
     MAC12: int
 
+
 @dataclass
 class DeviceDetail:
     id: str
@@ -253,7 +257,7 @@ class DeviceDetail:
     currentState: DeviceState
 
     def from_json(device_dict):
-        device_state_dict = device_dict.pop('state', None)
+        device_state_dict = device_dict.pop("state", None)
         device = DeviceDetail(**device_dict)
         if device_state_dict:
             device.state = DeviceState(**device_state_dict)

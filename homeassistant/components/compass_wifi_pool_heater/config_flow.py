@@ -1,10 +1,9 @@
 """Config flow for Compass WiFi Pool Heater integration."""
 from __future__ import annotations
 
-import json
 import logging
 from typing import Any
-import aiohttp
+
 import voluptuous as vol
 
 from homeassistant import config_entries
@@ -12,8 +11,8 @@ from homeassistant.core import HomeAssistant
 from homeassistant.data_entry_flow import FlowResult
 from homeassistant.exceptions import HomeAssistantError
 
-from .const import DOMAIN
 from .client import CompassWifiPoolHeaterClient
+from .const import DOMAIN
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -23,6 +22,7 @@ STEP_USER_DATA_SCHEMA = vol.Schema(
         vol.Required("password"): str,
     }
 )
+
 
 class PlaceholderHub:
     """Placeholder class to make tests pass.
@@ -39,7 +39,9 @@ class PlaceholderHub:
         return True
 
 
-async def validate_input(hass: HomeAssistant, data: dict[str, Any]) -> list[dict[str, Any]]:
+async def validate_input(
+    hass: HomeAssistant, data: dict[str, Any]
+) -> list[dict[str, Any]]:
     try:
         client = CompassWifiPoolHeaterClient()
         await client.connect(**data)
@@ -48,7 +50,14 @@ async def validate_input(hass: HomeAssistant, data: dict[str, Any]) -> list[dict
 
     devices = await client.get_device_details()
 
-    return {"title": devices[0].name, "description": devices[0].description, "uniqueid": devices[0].unique_key,  "username": data["username"], "password": data["password"]}
+    return {
+        "title": devices[0].name,
+        "description": devices[0].description,
+        "uniqueid": devices[0].unique_key,
+        "username": data["username"],
+        "password": data["password"],
+    }
+
 
 class ConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     """Handle a config flow for Compass WiFi Pool Heater."""

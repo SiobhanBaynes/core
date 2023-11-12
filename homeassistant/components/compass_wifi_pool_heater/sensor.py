@@ -13,11 +13,12 @@ from homeassistant.helpers.typing import ConfigType, DiscoveryInfoType
 
 from .const import DOMAIN
 
+
 def setup_platform(
     hass: HomeAssistant,
     config: ConfigType,
     add_entities: AddEntitiesCallback,
-    discovery_info: DiscoveryInfoType | None = None
+    discovery_info: DiscoveryInfoType | None = None,
 ) -> None:
     """Set up the sensor platform."""
     add_entities([ExampleSensor()])
@@ -43,6 +44,7 @@ class ExampleSensor(SensorEntity):
     #     return {
     #         "device_id": self._device.id
     #     }
+
 
 async def async_setup_entry(
     hass: core.HomeAssistant,
