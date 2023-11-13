@@ -1,59 +1,63 @@
 """Platform for sensor integration."""
 from __future__ import annotations
 
+from homeassistant import config_entries, core
 from homeassistant.components.sensor import (
     SensorDeviceClass,
     SensorEntity,
     SensorStateClass,
 )
 from homeassistant.const import UnitOfTemperature
-from homeassistant.core import HomeAssistant
-from homeassistant.helpers.entity_platform import AddEntitiesCallback
-from homeassistant.helpers.typing import ConfigType, DiscoveryInfoType
+from homeassistant.helpers.device_registry import DeviceInfo
 
+from .client import CompassWifiPoolHeaterClient
 from .const import DOMAIN
+from .types import Device, DeviceDetail, DeviceState
 
 
-def setup_platform(
-    hass: HomeAssistant,
-    config: ConfigType,
-    add_entities: AddEntitiesCallback,
-    discovery_info: DiscoveryInfoType | None = None,
-) -> None:
-    """Set up the sensor platform."""
-    add_entities([ExampleSensor()])
+class WaterTemperatureSensor(SensorEntity):
+    """Representation of a water temperature sensor."""
 
+    def __init__(self, client: CompassWifiPoolHeaterClient, device: Device) -> None:
+        """Representation of a Sensor."""
+        self.client = client
+        self._device_id = device.unique_key
+        self._attr_name = "Water Temperature"
+        self._attr_device_class = SensorDeviceClass.TEMPERATURE
+        self._attr_state_class = SensorStateClass.MEASUREMENT
+        self._attr_unique_id = f"{self._device_id}-water-temperature"
+        self._attr_device_info = DeviceInfo(
+            identifiers={(DOMAIN, self._device_id)},
+            name=device.name,
+            manufacturer="Compass",
+            model=device.model_name.replace("_", " "),
+        )
 
-class ExampleSensor(SensorEntity):
-    """Representation of a Sensor."""
-
-    _attr_name = "Example Temperature"
-    _attr_native_unit_of_measurement = UnitOfTemperature.CELSIUS
-    _attr_device_class = SensorDeviceClass.TEMPERATURE
-    _attr_state_class = SensorStateClass.MEASUREMENT
-
-    def update(self) -> None:
-        """Fetch new state data for the sensor.
-
-        This is the only method that should fetch new data for Home Assistant.
-        """
-        self._attr_native_value = 23
-
-    #  def extra_state_attributes(self) -> dict[str, str]:
-    #     """Return the state attributes."""
-    #     return {
-    #         "device_id": self._device.id
-    #     }
+    async def async_update(self) -> None:
+        """Fetch new state data for the sensor."""
+        device_detail: DeviceDetail = await self.client.get_device_detail(
+            self._device_id
+        )
+        state: DeviceState = device_detail.currentState
+        self._attr_native_value = state.RMT
+        self._attr_native_unit_of_measurement = (
+            UnitOfTemperature.FAHRENHEIT if state.CF == 0 else UnitOfTemperature.CELSIUS
+        )
 
 
 async def async_setup_entry(
     hass: core.HomeAssistant,
     config_entry: config_entries.ConfigEntry,
     async_add_entities,
-):
-    """Setup sensors from a config entry created in the integrations UI."""
-    config = hass.data[DOMAIN][config_entry.entry_id]
-    # session = async_get_clientsession(hass)
-    # github = GitHubAPI(session, "requester", oauth_token=config[CONF_ACCESS_TOKEN])
-    # sensors = [GitHubRepoSensor(github, repo) for repo in config[CONF_REPOS]]
-    async_add_entities([ExampleSensor()], update_before_add=True)
+) -> None:
+    """Create sensor."""
+    # config = hass.data[DOMAIN][config_entry.entry_id]
+    client = CompassWifiPoolHeaterClient()
+
+    await client.connect(config_entry.data["username"], config_entry.data["password"])
+    devices_list = await client.get_devices()
+
+    async_add_entities(
+        [WaterTemperatureSensor(client, device) for device in devices_list],
+        update_before_add=True,
+    )

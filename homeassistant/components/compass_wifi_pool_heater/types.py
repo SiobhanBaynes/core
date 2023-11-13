@@ -1,6 +1,17 @@
 """File for Compass Wifi client models."""
 from dataclasses import dataclass
 
+import voluptuous as vol
+
+from homeassistant.exceptions import HomeAssistantError
+
+STEP_USER_DATA_SCHEMA = vol.Schema(
+    {
+        vol.Required("username"): str,
+        vol.Required("password"): str,
+    }
+)
+
 
 @dataclass
 class Device:
@@ -18,7 +29,10 @@ class Device:
     groups: list[str]
 
 
+@dataclass
 class DeviceState:
+    """Class for a device state."""
+
     CF: int
     DF1: int
     DF2: int
@@ -246,6 +260,8 @@ class DeviceState:
 
 @dataclass
 class DeviceDetail:
+    """Class for a device detail."""
+
     id: str
     unique_key: str
     name: str
@@ -254,11 +270,25 @@ class DeviceDetail:
     zipcode: str
     last_online: str
     server_time: str
-    currentState: DeviceState
+    currentState: DeviceState  # noqa: N815 (Class is defined by 3rd party)
 
-    def from_json(device_dict):
-        device_state_dict = device_dict.pop("state", None)
+    def __init__(self, **kwargs) -> None:
+        """Construct the class."""
+        for key, value in kwargs.items():
+            setattr(self, key, value)
+
+    def from_json(self, **device_dict):
+        """Construct the class from a JSON object."""
+        device_state_dict = device_dict.pop("currentState", None)
         device = DeviceDetail(**device_dict)
         if device_state_dict:
             device.state = DeviceState(**device_state_dict)
         return device
+
+
+class CannotConnect(HomeAssistantError):
+    """Error to indicate we cannot connect."""
+
+
+class InvalidAuth(HomeAssistantError):
+    """Error to indicate there is invalid auth."""
